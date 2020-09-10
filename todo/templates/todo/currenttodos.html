@@ -5,7 +5,14 @@
 {%for i in todos%}
 
 <ul>
-   <li> {%if i.important%}<b>{%endif%}<a href='{%url 'viewtodo' i.id%}'>{{i.Title}}</a>{%if i.important%}</b>{%endif%}- {{i.memo}}</li>
+   <li> {%if i.important%}<b>{%endif%}
+
+   <form method="GET" action='{%url 'viewtodo' i.id%}'>
+   {% csrf_token %}
+   <input type='submit' value='{{i.Title}}'>
+   </form>
+   
+   {%if i.important%}</b>{%endif%}- {{i.memo}}</li>
 </ul>
 {%endfor%}
 

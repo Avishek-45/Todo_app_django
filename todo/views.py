@@ -47,8 +47,12 @@ def Logout(request):
         return HttpResponse('404- not found')
 
 def currenttodos(request):
-    todo=TODO.objects.filter(user=request.user)
-    return render(request,'todo/currenttodos.html',{'todos':todo})
+    try:
+        todo=TODO.objects.filter(user=request.user)
+        return render(request,'todo/currenttodos.html',{'todos':todo})
+    except TypeError:
+        return HttpResponse('404 - Not Found')
+
 
 def create_todo(request):
     if request.method=='GET':
@@ -68,4 +72,18 @@ def create_todo(request):
         
 def viewtodo(request,todo_pk):
     todo=get_object_or_404(TODO,pk=todo_pk)
-    return render(request, 'todo/viewtodo.html',{'todo':todo})
+    
+    if request.method=='GET':
+        form=Todoform(instance=todo)
+        return render(request, 'todo/viewtodo.html',{'todo':todo,'form':form})
+    else:
+        try:
+            todo=Todoform(request.POST,instance=todo)
+            todo.save()
+            return redirect('currenttodos')
+        except ValueError:
+            return redirect(request, 'todo/viewtodo.html',{'error':'Error occured'})
+
+
+        
+
