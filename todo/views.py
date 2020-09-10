@@ -5,6 +5,8 @@ from django.db import IntegrityError
 from django.contrib.auth import login,logout,authenticate
 from .forms import Todoform
 from .models import TODO
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required  #authenticates and allows only certain page to access before registration
 # Create your views here.
 
 
@@ -38,7 +40,7 @@ def Loginuser(request):
             login(request,user)
             return redirect('currenttodos')
 
-
+@login_required
 def Logout(request):
     if request.method == 'POST':
         logout(request)
@@ -46,14 +48,21 @@ def Logout(request):
     else:
         return HttpResponse('404- not found')
 
+@login_required
 def currenttodos(request):
     try:
-        todo=TODO.objects.filter(user=request.user)
+        todo=TODO.objects.filter(user=request.user,Datecomplited__isnull=True) #True hunjel samma current todoma hunxa natra false bhayepaxi complete ma janxa
         return render(request,'todo/currenttodos.html',{'todos':todo})
     except TypeError:
         return HttpResponse('404 - Not Found')
 
+@login_required
+def completedtodo(request):
+        todo=TODO.objects.filter(user=request.user,Datecomplited__isnull=False).order_by('-Datecomplited') #True hunjel samma current todoma hunxa natra false bhayepaxi complete ma janxa
+        return render(request,'todo/completedtodo.html',{'todos':todo})
+   
 
+@login_required
 def create_todo(request):
     if request.method=='GET':
         context={'form':Todoform()}
@@ -69,9 +78,9 @@ def create_todo(request):
         except ValueError:
             return render(request,'todo/create_todo.html',{'form':Todoform(),'error':'Bad input'})
 
-        
-def viewtodo(request,todo_pk):
-    todo=get_object_or_404(TODO,pk=todo_pk)
+@login_required       
+def viewtodo(request,todo_pk):   #update
+    todo=get_object_or_404(TODO,pk=todo_pk,user=request.user) #registered user le matra acess garn apauxa
     
     if request.method=='GET':
         form=Todoform(instance=todo)
@@ -83,6 +92,22 @@ def viewtodo(request,todo_pk):
             return redirect('currenttodos')
         except ValueError:
             return redirect(request, 'todo/viewtodo.html',{'error':'Error occured'})
+
+@login_required
+def completetodo(request,todo_pk):
+
+    todo=get_object_or_404(TODO,pk=todo_pk,user=request.user) 
+    if request.method=='POST':
+        todo.Datecomplited=timezone.now()
+        todo.save()
+        return redirect('currenttodos')
+
+@login_required
+def deletetodo(request,todo_pk):
+    todo=get_object_or_404(TODO,pk=todo_pk,user=request.user) 
+    if request.method=='POST':
+        todo.delete()
+        return redirect('currenttodos')
 
 
         
